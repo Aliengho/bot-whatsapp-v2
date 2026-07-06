@@ -7,47 +7,53 @@ const express = require('express');
 
 const app = express();
 
-// ======================
-// IA (GROQ)
-// ======================
+// ==========================
+// GROQ IA
+// ==========================
 const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY || "SUA_CHAVE_AQUI"
+    apiKey: process.env.GROQ_API_KEY
 });
 
-// ======================
+// ==========================
 // ADMIN
-// ======================
+// ==========================
 const NUMERO_RELATORIO = "258873429456@c.us";
 
-// ======================
+// ==========================
 // DADOS
-// ======================
+// ==========================
 const conversas = {};
 let ultimoId = 1000;
 
-// ======================
-// WHATSAPP CLIENT
-// ======================
+// ==========================
+// WHATSAPP CLIENT (FIX RENDER)
+// ==========================
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu'
+        ]
     }
 });
 
-// ======================
-// QR CODE (LOCAL)
-// ======================
+// ==========================
+// QR CODE (Render logs)
+// ==========================
 client.on('qr', (qr) => {
-    console.log('📱 Escaneia o QR Code:');
+    console.log('📱 Escaneia o QR Code abaixo:');
     qrcode.generate(qr, { small: true });
 });
 
-// ======================
-// CONECTADO
-// ======================
+// ==========================
+// READY
+// ==========================
 client.on('ready', async () => {
-    console.log('✅ Bot conectado!');
+    console.log('✅ Bot conectado com sucesso!');
 
     try {
         await client.sendMessage(
@@ -55,39 +61,37 @@ client.on('ready', async () => {
             '✅ Bot iniciado com sucesso no Render!'
         );
     } catch (err) {
-        console.log('Erro ao enviar mensagem:', err);
+        console.log("Erro ao enviar mensagem admin:", err);
     }
 });
 
-// ======================
+// ==========================
 // MENSAGENS
-// ======================
+// ==========================
 client.on('message', async (message) => {
 
     const texto = message.body.trim();
 
     try {
 
-        // ======================
-        // ADMIN RESPONDER
-        // ======================
+        // ==========================
+        // ADMIN
+        // ==========================
         if (message.from === NUMERO_RELATORIO) {
 
             if (texto.toLowerCase().startsWith('responda ')) {
 
                 const partes = texto.split(' ');
                 const id = partes[1];
-                const respostaManual = partes.slice(2).join(' ');
+                const resposta = partes.slice(2).join(' ');
 
-                if (!conversas[id]) {
-                    return client.sendMessage(NUMERO_RELATORIO, '❌ ID não encontrado.');
-                }
+                if (!conversas[id]) return;
 
-                await client.sendMessage(conversas[id].numero, respostaManual);
+                await client.sendMessage(conversas[id].numero, resposta);
 
                 await client.sendMessage(
                     NUMERO_RELATORIO,
-                    `✅ Resposta enviada para ${conversas[id].nome}`
+                    `✅ Respondido ID ${id}`
                 );
 
                 return;
@@ -96,11 +100,10 @@ client.on('message', async (message) => {
 
         if (message.fromMe) return;
 
-        // ======================
+        // ==========================
         // CONTACTO
-        // ======================
+        // ==========================
         const contato = await message.getContact();
-
         const idConversa = ++ultimoId;
 
         conversas[idConversa] = {
@@ -109,9 +112,9 @@ client.on('message', async (message) => {
             mensagem: message.body
         };
 
-        // ======================
-        // RELATÓRIO
-        // ======================
+        // ==========================
+        // RELATÓRIO ADMIN
+        // ==========================
         await client.sendMessage(
             NUMERO_RELATORIO,
             `📩 NOVA MENSAGEM
@@ -121,17 +124,12 @@ client.on('message', async (message) => {
 📱 Número: ${message.from.replace('@c.us', '')}
 
 💬 Mensagem:
-${message.body}
-
-🕒 ${new Date().toLocaleString()}
-
-Responder:
-responda ${idConversa} sua mensagem`
+${message.body}`
         );
 
-        // ======================
-        // IA
-        // ======================
+        // ==========================
+        // IA (GROQ)
+        // ==========================
         if (texto.toLowerCase().startsWith('ia ')) {
 
             const pergunta = texto.slice(3);
@@ -155,7 +153,7 @@ responda ${idConversa} sua mensagem`
                 messages: [
                     {
                         role: "system",
-                        content: "Responde em português simples e claro."
+                        content: "Responde em português simples e direto."
                     },
                     ...memoriaIA[userId]
                 ],
@@ -175,11 +173,11 @@ responda ${idConversa} sua mensagem`
             return;
         }
 
-        // ======================
+        // ==========================
         // COMANDOS SIMPLES
-        // ======================
+        // ==========================
         if (texto.toLowerCase() === 'oi') {
-            return message.reply('Olá 👋! Escreve: ia tua pergunta');
+            return message.reply('Olá 👋 escreve: ia sua pergunta');
         }
 
         if (texto.toLowerCase() === 'menu') {
@@ -191,24 +189,27 @@ responda ${idConversa} sua mensagem`
         }
 
     } catch (err) {
-        console.log("❌ ERRO:", err);
+        console.log("ERRO:", err);
     }
 });
 
-// ======================
-// EXPRESS SERVER (RENDER)
-// ======================
-const PORT = process.env.PORT || 3000;
-
+// ==========================
+// EXPRESS (Render Web Service)
+// ==========================
 app.get('/', (req, res) => {
     res.send('Bot WhatsApp ativo 🚀');
 });
+
+// ==========================
+// START SERVER
+// ==========================
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log("Servidor rodando na porta " + PORT);
 });
 
-// ======================
+// ==========================
 // START BOT
-// ======================
+// ==========================
 client.initialize();
