@@ -1,18 +1,8 @@
-const memoriaIA = {};
-
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const Groq = require('groq-sdk');
 const express = require('express');
 
 const app = express();
-
-// ==========================
-// GROQ IA
-// ==========================
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY
-});
 
 // ==========================
 // ADMIN
@@ -26,7 +16,7 @@ const conversas = {};
 let ultimoId = 1000;
 
 // ==========================
-// WHATSAPP CLIENT (FIX RENDER)
+// WHATSAPP CLIENT (RENDER SAFE)
 // ==========================
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -42,10 +32,10 @@ const client = new Client({
 });
 
 // ==========================
-// QR CODE (Render logs)
+// QR CODE
 // ==========================
 client.on('qr', (qr) => {
-    console.log('📱 Escaneia o QR Code abaixo:');
+    console.log('📱 Escaneia o QR Code:');
     qrcode.generate(qr, { small: true });
 });
 
@@ -53,15 +43,15 @@ client.on('qr', (qr) => {
 // READY
 // ==========================
 client.on('ready', async () => {
-    console.log('✅ Bot conectado com sucesso!');
+    console.log('✅ Bot conectado!');
 
     try {
         await client.sendMessage(
             NUMERO_RELATORIO,
-            '✅ Bot iniciado com sucesso no Render!'
+            '✅ Bot online no Render!'
         );
     } catch (err) {
-        console.log("Erro ao enviar mensagem admin:", err);
+        console.log(err);
     }
 });
 
@@ -75,34 +65,10 @@ client.on('message', async (message) => {
     try {
 
         // ==========================
-        // ADMIN
+        // IGNORAR BOT
         // ==========================
-        if (message.from === NUMERO_RELATORIO) {
-
-            if (texto.toLowerCase().startsWith('responda ')) {
-
-                const partes = texto.split(' ');
-                const id = partes[1];
-                const resposta = partes.slice(2).join(' ');
-
-                if (!conversas[id]) return;
-
-                await client.sendMessage(conversas[id].numero, resposta);
-
-                await client.sendMessage(
-                    NUMERO_RELATORIO,
-                    `✅ Respondido ID ${id}`
-                );
-
-                return;
-            }
-        }
-
         if (message.fromMe) return;
 
-        // ==========================
-        // CONTACTO
-        // ==========================
         const contato = await message.getContact();
         const idConversa = ++ultimoId;
 
@@ -123,69 +89,43 @@ client.on('message', async (message) => {
 👤 Nome: ${contato.pushname || "Sem nome"}
 📱 Número: ${message.from.replace('@c.us', '')}
 
-💬 Mensagem:
-${message.body}`
+💬 ${message.body}`
         );
 
         // ==========================
-        // IA (GROQ)
-        // ==========================
-        if (texto.toLowerCase().startsWith('ia ')) {
-
-            const pergunta = texto.slice(3);
-            const userId = message.from;
-
-            if (!memoriaIA[userId]) {
-                memoriaIA[userId] = [];
-            }
-
-            memoriaIA[userId].push({
-                role: "user",
-                content: pergunta
-            });
-
-            if (memoriaIA[userId].length > 10) {
-                memoriaIA[userId].shift();
-            }
-
-            const resposta = await groq.chat.completions.create({
-                model: "llama-3.1-8b-instant",
-                messages: [
-                    {
-                        role: "system",
-                        content: "Responde em português simples e direto."
-                    },
-                    ...memoriaIA[userId]
-                ],
-                temperature: 0.7,
-                max_tokens: 500
-            });
-
-            const textoIA = resposta.choices[0].message.content;
-
-            memoriaIA[userId].push({
-                role: "assistant",
-                content: textoIA
-            });
-
-            await message.reply(textoIA);
-
-            return;
-        }
-
-        // ==========================
-        // COMANDOS SIMPLES
+        // COMANDOS
         // ==========================
         if (texto.toLowerCase() === 'oi') {
-            return message.reply('Olá 👋 escreve: ia sua pergunta');
+            return message.reply('Olá 👋');
         }
 
         if (texto.toLowerCase() === 'menu') {
             return message.reply(`📋 MENU
 
-🤖 ia + pergunta
-👋 oi
-📋 menu`);
+oi → saudação
+menu → opções`);
+        }
+
+        // ==========================
+        // ADMIN RESPOSTA
+        // ==========================
+        if (message.from === NUMERO_RELATORIO) {
+
+            if (texto.toLowerCase().startsWith('responda ')) {
+
+                const partes = texto.split(' ');
+                const id = partes[1];
+                const resposta = partes.slice(2).join(' ');
+
+                if (!conversas[id]) return;
+
+                await client.sendMessage(conversas[id].numero, resposta);
+
+                await client.sendMessage(
+                    NUMERO_RELATORIO,
+                    `✅ Respondido ID ${id}`
+                );
+            }
         }
 
     } catch (err) {
@@ -194,15 +134,12 @@ ${message.body}`
 });
 
 // ==========================
-// EXPRESS (Render Web Service)
+// EXPRESS SERVER (RENDER)
 // ==========================
 app.get('/', (req, res) => {
     res.send('Bot WhatsApp ativo 🚀');
 });
 
-// ==========================
-// START SERVER
-// ==========================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
