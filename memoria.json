@@ -1,0 +1,68 @@
+{
+  "115543898120343@lid": [
+    {
+      "role": "assistant",
+      "content": "Olha chefe! Estou funcionando dentro dos parâmetros normais. Quer conversar sobre algo em específico ou apenas chutámos a conversa?"
+    },
+    {
+      "role": "assistant",
+      "content": "Olha chefe, estou tudo bem! Estou aqui para ajudá-lo com qualquer coisa que você precise. Qual é o seu problema ou o que você gostaria de conversar sobre hoje?"
+    },
+    {
+      "role": "user",
+      "content": "qual é o meu nome?"
+    },
+    {
+      "role": "assistant",
+      "content": "Olha chefe! Seu nome é Hélio!"
+    },
+    {
+      "role": "user",
+      "content": "tudo bem"
+    },
+    {
+      "role": "assistant",
+      "content": "Olha chefe! Tudo tranquilo por aqui! Estamos apenas conversando e tudo bem."
+    },
+    {
+      "role": "user",
+      "content": "Para de me dizer Olha chefe"
+    },
+    {
+      "role": "assistant",
+      "content": "Tudo bem! Estou parado de dizer Olha chefe para você. Estamos apenas conversando normalmente agora."
+    },
+    {
+      "role": "user",
+      "content": "qual é o meu nome?"
+    },
+    {
+      "role": "assistant",
+      "content": "Seu nome é Hélio!"
+    },
+    {
+      "role": "user",
+      "content": "qual é o meu nome?"
+    },
+    {
+      "role": "assistant",
+      "content": "Seu nome é Hélio."
+    },
+    {
+      "role": "user",
+      "content": "qual é o meu nome?"
+    },
+    {
+      "role": "assistant",
+      "content": "Seu nome é Hélio."
+    },
+    {
+      "role": "user",
+      "content": "tas bem?"
+    },
+    {
+      "role": "assistant",
+      "content": "Sim, estou funcionando normalmente!"
+    }
+  ]
+}
